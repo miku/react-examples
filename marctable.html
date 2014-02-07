@@ -1,0 +1,219 @@
+<html>
+<head>
+    <title>Hello World</title>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/react/0.8.0/react.min.js"></script>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/react/0.8.0/JSXTransformer.js"></script>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/jquery/2.1.0/jquery.min.js"></script>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/underscore.js/1.5.2/underscore-min.js"></script>
+</head>
+<body>
+    <div id="example"></div>
+    <script type="text/jsx">
+/** @jsx React.DOM */
+
+var FirstSubfieldRow = React.createClass({
+    render: function() {
+        return (<tr><td>{this.props.field}</td>
+                    <td>{this.props.subfield}</td>
+                    <td>{this.props.subfieldValue}</td></tr>);
+    }
+});
+
+var SubfieldRow = React.createClass({
+    render: function() {
+        return (<tr><td></td>
+                    <td>{this.props.subfield}</td>
+                    <td>{this.props.subfieldValue}</td></tr>);
+    }
+});
+
+var FieldRows = React.createClass({
+    render: function() {
+        var rows = [];
+        return ({rows});
+    }
+});
+
+React.renderComponent(<FieldRows field="591" document={{
+          "a": "UB 2475:L1UB",
+          "ind1": " ",
+          "ind2": " "
+        }} />, document.body);
+
+// DOC = {
+//   "_index": "bsz",
+//   "_type": "title",
+//   "_id": "310883989",
+//   "_version": 1,
+//   "exists": true,
+//   "_source": {
+//     "content": {
+//       "591": [
+//         {
+//           "a": "UB 2475:L1UB",
+//           "ind1": " ",
+//           "ind2": " "
+//         }
+//       ],
+//       "016": [
+//         {
+//           "a": "(OCoLC)605351824",
+//           "ind1": " ",
+//           "ind2": " "
+//         }
+//       ],
+//       "250": [
+//         {
+//           "a": "1. publ., [Nachdr. d. Ausg.] 1971",
+//           "ind1": " ",
+//           "ind2": " "
+//         }
+//       ],
+//       "490": [
+//         {
+//           "a": "Routlegde library editions : History and philosophy of science ;",
+//           "v": "13",
+//           "ind1": "1",
+//           "ind2": " "
+//         }
+//       ],
+//       "035": [
+//         {
+//           "a": "(DE-599)BSZ310883989",
+//           "ind1": " ",
+//           "ind2": " "
+//         }
+//       ],
+//       "830": [
+//         {
+//           "a": "Routledge library editions / History and philosophy of science",
+//           "ind1": " ",
+//           "g": "13",
+//           "ind2": "0",
+//           "w": "(DE-576)285941739",
+//           "v": "13"
+//         }
+//       ],
+//       "008": "090917s2009    xx             00 0 eng c",
+//       "936": [
+//         {
+//           "a": "UB 2475",
+//           "k": [
+//             "Physik",
+//             "Allgemeine Nachschlagewerke, Bibliographien, Geschichte und Philosophie der Physik",
+//             "Geschichte der Physik",
+//             "Geschichte einzelner Teilgebiete und Probleme",
+//             "Astronomie, Astrophysik",
+//             "Allgemeines"
+//           ],
+//           "b": "Allgemeines",
+//           "ind1": "r",
+//           "ind2": "v"
+//         }
+//       ],
+//       "935": [
+//         {
+//           "b": "druck",
+//           "ind1": " ",
+//           "ind2": " "
+//         }
+//       ],
+//       "300": [
+//         {
+//           "a": "296 S. :",
+//           "b": "Ill., graph. Darst.",
+//           "ind1": " ",
+//           "ind2": " "
+//         }
+//       ],
+//       "082": [
+//         {
+//           "a": "520",
+//           "ind1": "0",
+//           "ind2": " "
+//         }
+//       ],
+//       "084": [
+//         {
+//           "a": "UB 2475",
+//           "2": "rvk",
+//           "ind1": " ",
+//           "ind2": " "
+//         }
+//       ],
+//       "245": [
+//         {
+//           "a": "Boundaries of the universe /",
+//           "c": "John S. Glasby",
+//           "ind1": "1",
+//           "ind2": "0"
+//         }
+//       ],
+//       "001": "310883989",
+//       "260": [
+//         {
+//           "a": "London [u.a.] :",
+//           "c": "2009",
+//           "b": "Routledge,",
+//           "ind1": " ",
+//           "ind2": " "
+//         }
+//       ],
+//       "007": "tu",
+//       "020": [
+//         {
+//           "9": "0-415-47482-5",
+//           "a": "0415474825",
+//           "ind1": " ",
+//           "ind2": " "
+//         },
+//         {
+//           "9": "978-0-415-47482-5",
+//           "a": "9780415474825",
+//           "ind1": " ",
+//           "ind2": " "
+//         }
+//       ],
+//       "005": "20110403061840.0",
+//       "100": [
+//         {
+//           "a": "Glasby, John S.",
+//           "0": "(DE-576)161125824",
+//           "ind1": "1",
+//           "ind2": " "
+//         }
+//       ],
+//       "044": [
+//         {
+//           "a": "XA-GB",
+//           "ind1": " ",
+//           "ind2": " "
+//         }
+//       ],
+//       "041": [
+//         {
+//           "a": "eng",
+//           "ind1": "0",
+//           "ind2": " "
+//         }
+//       ],
+//       "040": [
+//         {
+//           "a": "DE-576",
+//           "c": "DE-576",
+//           "b": "ger",
+//           "ind1": " ",
+//           "ind2": " ",
+//           "e": "rakwb"
+//         }
+//       ],
+//       "003": "DE-576"
+//     },
+//     "meta": {
+//       "date": "2013-02-05"
+//     }
+//   }
+// }
+    </script>
+</body>
+</html>
