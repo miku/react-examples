@@ -1,5 +1,5 @@
 React.js examples
 =================
 
-Simple react examples.
+Some react examples.
 
