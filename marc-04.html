@@ -1,0 +1,287 @@
+<html>
+<head>
+<!--
+Example of a bit more complitcated structure:
+
+    ElasticRecord
+        Record
+            ControlField|DataField
+            ControlField|DataField
+            ControlField|DataField
+            ...
+
+    DataField
+        DataFieldValue
+            HyperLinkValue
+
+
+Example usage:
+
+    <ElasticRecord index="bsz" id="105233056"
+                   base="http://localhost:5000/doc" />
+
+Assumes the response at base/index/id URL is the source document from
+Elasticsearch.
+
+Example views: http://imgur.com/a/Qws1Z
+Fold/Unfold: http://imgur.com/a/fFgnI
+
+-->
+<title>Marc 4</title>
+<meta charset="utf-8">
+<script src="/js/react.js"></script>
+<script src="/js/JSXTransformer.js"></script>
+<script src="/js/jquery.min.js"></script>
+<script src="/js/underscore.js"></script>
+<script src="/js/underscore.string.min.js"></script>
+<script src="/js/purl.js"></script>
+<style type="text/css">
+body {
+    /*background: white;*/
+    color: #222222;
+    padding: 0;
+    margin: 0;
+    font-family: "Helvetica Neue", "Helvetica",
+    Helvetica, Arial, sans-serif;
+    font-weight: normal;
+    font-style: normal;
+    line-height: 1;
+    position: relative;
+    cursor: default;
+}
+.datafield > .tag, .controlfield > .tag {
+    vertical-align: top;
+    font-weight: bold;
+}
+.datafield > .code {
+    color: #989898;
+    vertical-align: top;
+}
+.datafield > .value, .controlfield > .value {
+    background: #fff;
+}
+.expand-value {
+    font-size: 0.8em;
+}
+#example {
+    background: #fff;
+    /*width: 200px;*/
+}
+</style>
+</head>
+<body>
+    <div id="example"></div>
+    <script type="text/jsx">
+    /** @jsx React.DOM */
+
+    var HyperLinkValue = React.createClass({
+        getDefaultProps: function() {
+            return {'shortenUrls': false};
+        },
+        render: function() {
+            var value = this.props.value;
+            if (this.props.shortenUrls) {
+                return (<a href={value} title={value}>
+                    {$.url(value).attr('host')}</a>);
+            } else {
+                return (<a href={value}>{value}</a>);
+            }
+        }
+    });
+
+    var DataFieldValue = React.createClass({
+        getInitialState: function() {
+            return {'collapsed': true};
+        },
+        getDefaultProps: function() {
+            return {'shortenUrls': false,
+                    'cutoff': 100,
+                    'id': Math.random().toString(36).slice(2) };
+        },
+        handleClick: function() {
+            this.setState({collapsed: !this.state.collapsed});
+        },
+        render: function() {
+            if (_.str.startsWith(this.props.value, "http")) {
+                return (<td className="value">
+                    <HyperLinkValue value={this.props.value}
+                    shortenUrls={this.props.shortenUrls} /></td>);
+            } else {
+                if (this.props.value.length > this.props.cutoff) {
+                    if (this.state.collapsed) {
+                        var value = _.str.prune(this.props.value,
+                                                this.props.cutoff, "");
+                        var remainingChars = this.props.value.length -
+                                             this.props.cutoff;
+                        return (<td className="value">{value} &mdash;
+                            <a onClick={this.handleClick}
+                                href={"#" + this.props.id}>
+                                <span className="expand-value">
+                                    {remainingChars} more...</span></a></td>);
+                    } else {
+                        return (<td className="value">{this.props.value}
+                                    &mdash; <a onClick={this.handleClick}
+                                    href={"#" + this.props.id}>Collapse</a></td>);    
+                    }
+
+                } else {
+                    return (<td className="value">{this.props.value}</td>);
+                }
+            }
+        }
+    });
+
+    var DataField = React.createClass({
+        getDefaultProps: function() {
+            return {'omitTag': true,
+                    'shortenUrls': false,};
+        },
+        render: function() {
+            var id = Math.random().toString(36).slice(2);
+            if (this.props.omitTag) {
+                return (<tr id={id} className="datafield"><td></td>
+                    <td className="code">{this.props.code}</td>
+                    <DataFieldValue id={id} shortenUrls={this.props.shortenUrls}
+                    value={this.props.value} /></tr>);
+            } else {
+                return (<tr id={id} className="datafield">
+                    <td className="tag">{this.props.tag}</td>
+                    <td className="code">{this.props.code}</td>
+                    <DataFieldValue id={id} shortenUrls={this.props.shortenUrls}
+                    value={this.props.value} /></tr>);
+            }
+        }
+    });
+
+    var ControlField = React.createClass({
+        render: function() {
+            return (<tr className="controlfield">
+                <td className="tag">{this.props.tag}</td>
+                <td className="value" colSpan="2">
+                {this.props.value}</td></tr>)
+        }
+    });
+
+    var Record = React.createClass({
+        getInitialState: function() {
+            return {'expanded': false};
+        },
+        getDefaultProps: function() {
+            return {'shortenUrls': false,
+            'essentials': {"001": [], "100": ["a"], "700": ["a"],
+            "245": ["a", "b", "c"], "020": ["a"], "655": ["a"],
+            "935": ["a"], "300": ["a"], "500": ["a"]}};
+        },   
+        handleClick: function(e) {
+            this.setState({expanded: !this.state.expanded});
+        },
+        render: function() {
+            var $this = this;
+            var record = this.props.record;
+            var shortenUrls = this.props.shortenUrls;
+            var essentials = this.props.essentials;
+            rows = [];
+            if (this.state.expanded) {
+                filtered = record;    
+            } else {
+                filtered = _.pick(record, Object.keys(essentials));
+            }
+            console.log(filtered);
+            Object.keys(filtered).sort().forEach(function(tag) {
+                if (_.isString(record[tag])) {
+                    rows.push(<ControlField
+                                tag={tag} value={record[tag]} />);
+                } else {
+                    var fields = record[tag];
+                    for (var i = 0; i < fields.length; i++) {
+                        var field = fields[i];
+                        var woInds = _.omit(field, "ind1", "ind2");
+                        var counter = 0;
+                        Object.keys(woInds).sort().forEach(function(code) {
+                            if (!$this.state.expanded) {
+                                if (!_.contains(essentials[tag], code)) {
+                                    return;
+                                }
+                            }
+                            var value = field[code];
+                            if (_.isArray(value)) {
+                                for (var k = 0; k < value.length; k++) {
+                                    rows.push(<DataField
+                                        tag={tag} code={code}
+                                        value={value[k]} omitTag={counter > 0}
+                                        shortenUrls={shortenUrls} />);
+                                }
+                            } else if (_.isString(value)) {
+                                rows.push(<DataField
+                                    tag={tag} code={code}
+                                    value={value} omitTag={counter > 0}
+                                    shortenUrls={shortenUrls} />);
+                            } else {
+                                console.error("Wrong field value type.");
+                            }
+                            counter += 1;
+                        });
+                    }
+                }
+            });
+
+            var linkText = this.state.expanded ? "Less Details" : "More Details";
+            rows.push(<tr><td colSpan="3"><a href="#"
+                        onClick={this.handleClick}>{linkText}</a></td></tr>);
+            return (<table><tbody>{rows}</tbody></table>);
+            }
+        });
+
+    var ElasticRecord = React.createClass({
+        getInitialState: function() {
+            return {record: {}, error: {}}
+        },
+        getDefaultProps: function() {
+            return {'base': 'http://localhost:5000/doc',
+            'shortenUrls': false,
+            'essentials': {"001": [], "100": ["a"], "700": ["a"],
+            "245": ["a", "b", "c"], "020": ["a", "z", "9"], "655": ["a"],
+            "935": ["a"], "300": ["a"], "500": ["a"]}};
+        },
+        componentWillMount: function() {
+            var $this = this;
+            var url = this.props.base + "/" + this.props.index
+            + "/" + this.props.id;
+            $.ajax({
+                url: url,
+                dataType: 'json',
+                success: function(data) {
+                    $this.setState({record: data['content']});
+                },
+                error: function(hr, status, err) {
+                    console.error(err);
+                    $this.setState({error: "Connection failed: " + url});
+                }
+            });
+        },
+        render: function() {
+            if (_.isEmpty(this.state.record)) {
+                if (_.isEmpty(this.state.error)) {
+                    return (<div><p>Loading...</p></div>);
+                } else {
+                    return (<div><p>{this.state.error}</p></div>);
+                }
+            } else {
+                return (<div><Record record={this.state.record}
+                    shortenUrls={this.props.shortenUrls}
+                    essentials={this.props.essentials} /></div>);
+            }
+        }
+    });
+
+// React.renderComponent(
+//     <ElasticRecord index="bsz" id="105233056" shortenUrls={true} />,
+//     document.getElementById("example"));
+
+    React.renderComponent(
+        <ElasticRecord index="nep" id="9783322818218" shortenUrls={true} />,
+        document.getElementById("example"));
+
+</script>
+</body>
+</html>
