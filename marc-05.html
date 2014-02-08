@@ -1,0 +1,171 @@
+<html>
+<head>
+<!--
+Example of a bit more complitcated structure:
+
+    ElasticRecord
+        Record
+            ControlField|DataField
+            ControlField|DataField
+            ControlField|DataField
+            ...
+
+    DataField
+        DataFieldValue
+            HyperLinkValue
+
+
+Example usage:
+
+    <ElasticRecord index="bsz" id="105233056"
+                   base="http://localhost:5000/doc" />
+
+Assumes the response at base/index/id URL is the source document from
+Elasticsearch.
+
+Example views: http://imgur.com/a/Qws1Z
+Fold/Unfold: http://imgur.com/a/fFgnI
+
+-->
+<title>Marc 5</title>
+<meta charset="utf-8">
+<script src="/js/react.js"></script>
+<script src="/js/JSXTransformer.js"></script>
+<script src="/js/jquery.min.js"></script>
+<script src="/js/underscore.js"></script>
+<script src="/js/underscore.string.min.js"></script>
+<script src="/js/purl.js"></script>
+<style type="text/css">
+body {
+    /*background: white;*/
+    color: #222222;
+    padding: 0;
+    margin: 0;
+    font-family: "Helvetica Neue", "Helvetica",
+    Helvetica, Arial, sans-serif;
+    font-weight: normal;
+    font-style: normal;
+    line-height: 1;
+    position: relative;
+    cursor: default;
+}
+.datafield > .tag, .controlfield > .tag {
+    vertical-align: top;
+    font-weight: bold;
+}
+.datafield > .code {
+    color: #989898;
+    vertical-align: top;
+}
+.datafield > .value, .controlfield > .value {
+    background: #fff;
+}
+.expand-value {
+    font-size: 0.8em;
+}
+#example {
+    background: #fff;
+    /*width: 200px;*/
+}
+</style>
+</head>
+<body>
+    <div id="example"></div>
+    <script type="text/jsx">
+    /** @jsx React.DOM */
+
+
+    var Row = React.createClass({
+        render: function() {
+            return (<tr><td>{this.props.tag}</td>
+                        <td>{this.props.leftValue}</td>
+                        <td>{this.props.rightValue}</td></tr>);
+        }
+    });
+
+    var ComparisonTable = React.createClass({
+        getDefaultProps: function() {
+            return {defaultTags: {"001": [], "100": ["a"], "700": ["a"],
+                                  "245": ["a", "b", "c"], "020": ["a", "9"],
+                                  "655": ["a"], "935": ["a"], "300": ["a"],
+                                  "500": ["a"]}};
+        },
+        getAllDefinedTags: function() {
+            // TODO: return the union of the tags of left and right
+        },
+        render: function() {
+            var rows = [];
+            $this = this;
+            console.log(this.props.left);
+            Object.keys(this.props.defaultTags).sort().forEach(function(tag, i) {
+                console.log(tag);
+                leftValue = $this.props.left['record']['content'][tag]
+                rightValue = $this.props.right['record']['content'][tag];
+                rows.push(<Row tag={tag} leftValue={leftValue}
+                               rightValue={rightValue} />);
+            });
+            return (<table>{rows}</table>);
+        }
+    });
+
+    var Comparison = React.createClass({
+        getInitialState: function() {
+            return {left: {}, right: {}};
+        },
+        getDefaultProps: function() {
+            return {'base': 'http://localhost:5000/doc'}
+        },
+        componentWillMount: function() {
+            var $this = this;
+            var leftParts = this.props.left.split("://");
+            var leftIndex = leftParts[0];
+            var leftId = leftParts[1];
+            var leftUrl = this.props.base + "/" + leftIndex + "/" + leftId;
+            
+            var rightParts = this.props.right.split("://");
+            var rightIndex = rightParts[0];
+            var rightId = rightParts[1];
+            var rightUrl = this.props.base + "/" + rightIndex + "/" + rightId;
+
+            $.ajax({
+                url: leftUrl,
+                datatype: 'json',
+                success: function(data) {
+                    $this.setState({left: {index: leftIndex, id: leftId,
+                                           record: data}});
+                },
+                error: function(xhr, status, err) {
+                    console.error(err);
+                }
+            });
+
+            $.ajax({
+                url: rightUrl,
+                datatype: 'json',
+                success: function(data) {
+                    $this.setState({right: {index: rightIndex, id: rightId,
+                                            record: data}});
+                },
+                error: function(xhr, status, err) {
+                    console.error(err);
+                }
+            });
+        },
+        render: function() {
+            if (_.isEmpty(this.state.left) || _.isEmpty(this.state.right)) {
+                return (<div><p>Loading...</p></div>);
+            } else {
+                return (<div><ComparisonTable left={this.state.left}
+                                          right={this.state.right} /></div>);
+            }
+        }
+    });
+
+
+    React.renderComponent(
+        <Comparison left="nep://9783322818218" right="bsz://105233056" />,
+        document.getElementById("example"));
+
+</script>
+</body>
+</html>
