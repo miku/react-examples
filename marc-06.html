@@ -1,0 +1,285 @@
+<html>
+<head>
+<!--
+Example of a bit more complitcated structure:
+
+    ElasticRecord
+        Record
+            ControlField|DataField
+            ControlField|DataField
+            ControlField|DataField
+            ...
+
+    DataField
+        DataFieldValue
+            HyperLinkValue
+
+
+Example usage:
+
+    <ElasticRecord index="bsz" id="105233056"
+                   base="http://localhost:5000/doc" />
+
+Assumes the response at base/index/id URL is the source document from
+Elasticsearch.
+
+Example views: http://imgur.com/a/Qws1Z
+Fold/Unfold: http://imgur.com/a/fFgnI
+
+-->
+<title>Marc 6</title>
+<meta charset="utf-8">
+<script src="/js/react.js"></script>
+<script src="/js/JSXTransformer.js"></script>
+<script src="/js/jquery.min.js"></script>
+<script src="/js/underscore.js"></script>
+<script src="/js/underscore.string.min.js"></script>
+<script src="/js/purl.js"></script>
+<style type="text/css">
+body {
+    /*background: white;*/
+    color: #222222;
+    padding: 0;
+    margin: 0;
+    font-family: "Helvetica Neue", "Helvetica",
+    Helvetica, Arial, sans-serif;
+    font-weight: normal;
+    font-style: normal;
+    line-height: 1;
+    position: relative;
+    cursor: default;
+}
+.datafield > .tag, .controlfield > .tag {
+    vertical-align: top;
+    font-weight: bold;
+}
+.datafield > .code {
+    color: #989898;
+    vertical-align: top;
+}
+.datafield > .value, .controlfield > .value {
+    background: #fff;
+}
+.expand-value {
+    font-size: 0.8em;
+}
+#example {
+    background: #fff;
+    /*width: 200px;*/
+}
+</style>
+</head>
+<body>
+    <div id="example"></div>
+    <script type="text/jsx">
+    /** @jsx React.DOM */
+
+    var FieldRow = React.createClass({
+        getDefaultProps: function() {
+            omitTag: true
+        },
+        render: function() {
+            var tag = this.props.tag;
+            if (this.props.omitTag) {
+                tag = "";
+            }
+            return (<tr><td>{tag}</td>
+                    <td>{this.props.code}</td>
+                    <td>{this.props.leftValue}</td>
+                    <td>{this.props.rightValue}</td></tr>);
+        }
+    });
+
+    // A field for a single tag, consisting of a variable number
+    // of subfields, each subfield with a variable number of values.
+    // TODO: get rid of left/right.
+    var Field = React.createClass({
+        render: function() {
+            var leftValue = this.props.leftValue;
+            var rightValue = this.props.rightValue;
+
+            if (_.isUndefined(leftValue)) {
+                if (this.props.tag < "010") {
+                    leftValue = "NA";
+                } else {
+                    leftValue = [];
+                }
+            }
+
+            if (_.isUndefined(rightValue)) {
+                if (this.props.tag < "010") {
+                    rightValue = "NA";
+                } else {
+                    rightValue = [];
+                }
+
+            }
+            if (this.props.tag < "010") {
+                // simple control field
+                return (<FieldRow tag={this.props.tag} omitTag={false} code=""
+                            leftValue={leftValue} rightValue={rightValue} />);
+            } else {
+                // involved data field
+                var rows = [];
+
+                // maximum number of repeated fields, e.g. 2 x "020" etc.
+                var max = Math.max(leftValue.length, rightValue.length);
+
+                for (var i = 0; i < max; i++) {
+                    if (leftValue[i] === undefined) {
+                        leftValue[i] = {};
+                    }
+                    if (rightValue[i] === undefined) {
+                        rightValue[i] = {};
+                    }
+                    // subfield codes
+                    leftCodes = Object.keys(leftValue[i]);
+                    rightCodes = Object.keys(rightValue[i]);
+                    var codes = _.union(leftCodes, rightCodes);
+
+                    // ignore indicator for now
+                    codes = _.without(codes, "ind1", "ind2");
+
+                    // for each subfield code that appears in either doc
+                    for (var j = 0; j < codes.length; j++) {
+                        var code = codes[j];
+
+                        // get the subfield value ...
+                        var leftSubfieldValue = leftValue[i][code];
+                        var rightSubfieldValue = rightValue[i][code];
+
+                        // .. normalize to an array
+                        if (!_.isArray(leftSubfieldValue)) {
+                            leftSubfieldValue = [leftSubfieldValue];
+                        }
+                        if (!_.isArray(rightSubfieldValue)) {
+                            rightSubfieldValue = [rightSubfieldValue];
+                        }
+
+                        // typical subfield value count is 1, but repeated
+                        // subfield values have been spotted in 100.a, 936.k, ...
+                        maxSubfieldValueCount = Math.max(leftSubfieldValue.length,
+                                                         rightSubfieldValue.length);
+
+                        for (var k = 0; k < maxSubfieldValueCount; k++) {
+                            rows.push(<FieldRow tag={this.props.tag}
+                                        omitTag={k > 0 || j > 0}
+                                        code={code}
+                                        leftValue={leftSubfieldValue[k]}
+                                        rightValue={rightSubfieldValue[k]} />);
+                        }
+                    }
+                }
+                // TODO: make the span go away ...
+                return (<div>{rows}</div>);
+            }
+        }
+    });
+
+    var ComparisonTable = React.createClass({
+        getDefaultProps: function() {
+            return {defaultTags: {"001": [], "100": ["a"], "700": ["a"],
+                                  "245": ["a", "b", "c"], "020": ["a", "9"],
+                                  "655": ["a"], "935": ["a"], "300": ["a"],
+                                  "500": ["a"], "936": []}};
+        },
+        getInitialState: function() {
+            return {expanded: false};
+        },
+        getAllDefinedTags: function() {
+            // TODO: return the union of the tags of left and right
+            var keys = _.union(Object.keys(this.props.left['record']['content']),
+                               Object.keys(this.props.right['record']['content']));
+            dict = {}
+            keys.forEach(function(key) {
+                dict[key] = [];
+            });
+            console.log(dict);
+            return dict;
+        },
+        handleClick: function() {
+            this.setState({expanded: !this.state.expanded});
+        },
+        render: function() {
+            $this = this;
+            var rows = [];
+            var tags;
+            if (this.state.expanded) {
+                tags = this.getAllDefinedTags();
+            } else {
+                tags = this.props.defaultTags;
+            }
+            Object.keys(tags).sort().forEach(function(tag, i) {
+                leftValue = $this.props.left['record']['content'][tag]
+                rightValue = $this.props.right['record']['content'][tag];
+                rows.push(<Field tag={tag} leftValue={leftValue}
+                                 rightValue={rightValue} />);
+            });
+            var linkText = this.state.expanded ? "Less Details" : "More Details";
+            rows.push(<tr><td colSpan="4"><a onClick={this.handleClick}
+                href="#">{linkText}</a></td></tr>);
+            return (<table>{rows}</table>);
+        }
+    });
+
+    var Comparison = React.createClass({
+        getInitialState: function() {
+            return {left: {}, right: {}};
+        },
+        getDefaultProps: function() {
+            return {'base': 'http://localhost:5000/doc'}
+        },
+        componentWillMount: function() {
+            var $this = this;
+            var leftParts = this.props.left.split("://");
+            var leftIndex = leftParts[0];
+            var leftId = leftParts[1];
+            var leftUrl = this.props.base + "/" + leftIndex + "/" + leftId;
+
+            var rightParts = this.props.right.split("://");
+            var rightIndex = rightParts[0];
+            var rightId = rightParts[1];
+            var rightUrl = this.props.base + "/" + rightIndex + "/" + rightId;
+
+            $.ajax({
+                url: leftUrl,
+                datatype: 'json',
+                success: function(data) {
+                    $this.setState({left: {index: leftIndex, id: leftId,
+                                           record: data}});
+                },
+                error: function(xhr, status, err) {
+                    console.error(err);
+                }
+            });
+
+            $.ajax({
+                url: rightUrl,
+                datatype: 'json',
+                success: function(data) {
+                    $this.setState({right: {index: rightIndex, id: rightId,
+                                            record: data}});
+                },
+                error: function(xhr, status, err) {
+                    console.error(err);
+                }
+            });
+        },
+        render: function() {
+            if (_.isEmpty(this.state.left) || _.isEmpty(this.state.right)) {
+                return (<div><p>Loading...</p></div>);
+            } else {
+                return (<div><ComparisonTable left={this.state.left}
+                                          right={this.state.right} /></div>);
+            }
+        }
+    });
+
+
+    React.renderComponent(
+        <Comparison left="nep://9783322818218" right="bsz://105233056" />,
+        document.getElementById("example"));
+
+</script>
+</body>
+</html>
