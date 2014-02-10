@@ -63,6 +63,12 @@ body {
 .not-available {
     color: #ababab;
 }
+.comparable {
+
+}
+.uncomparable {
+    color: #ababab;
+}
 #example {
     background: #fff;
     /*width: 200px;*/
@@ -100,6 +106,7 @@ body {
         },
         handleClick: function() {
             this.setState({collapsed: !this.state.collapsed});
+            this.preventDefault();
         },
         render: function() {
             if (this.props.value === undefined) {
@@ -143,7 +150,10 @@ body {
             if (this.props.omitTag) {
                 tag = "";
             }
-            return (<tr className="field">
+            var comparableRow = (this.props.leftValue !== undefined &&
+                                 this.props.rightValue !== undefined);
+            var comparableClass = comparableRow ? "comparable" : "uncomparable";
+            return (<tr className="field" className={comparableClass}>
                     <td className="tag">{tag}</td>
                     <td>{this.props.code}</td>
                     <FieldValue value={this.props.leftValue} />
@@ -154,10 +164,11 @@ body {
 
     var ComparisonTable = React.createClass({
         getDefaultProps: function() {
-            return {defaultTags: {"001": [], "100": ["a"], "700": ["a"],
+            return {defaultTags: {"001": [], "003": [], "100": ["a"],
+                                  "700": ["a"],
                                   "245": ["a", "b", "c"], "020": ["a", "9"],
                                   "655": ["a"], "935": ["a"], "300": ["a"],
-                                  "500": ["a"], "936": []}};
+                                  "500": ["a"] }};
         },
         getInitialState: function() {
             return {expanded: false};
@@ -170,7 +181,6 @@ body {
             keys.forEach(function(key) {
                 dict[key] = [];
             });
-            console.log(dict);
             return dict;
         },
         handleClick: function() {
@@ -179,32 +189,15 @@ body {
         render: function() {
             $this = this;
             var rows = [];
-            var tags;
-            if (this.state.expanded) {
-                tags = this.getAllDefinedTags();
-            } else {
-                tags = this.props.defaultTags;
-            }
+            var tags = this.state.expanded ? this.getAllDefinedTags() :
+                                            this.props.defaultTags;
+
             Object.keys(tags).sort().forEach(function(tag, i) {
-                leftValue = $this.props.left['record']['content'][tag]
-                rightValue = $this.props.right['record']['content'][tag];
 
-                if (_.isUndefined(leftValue)) {
-                    if (tag < "010") {
-                        leftValue = "NA";
-                    } else {
-                        leftValue = [];
-                    }
-                }
-
-                if (_.isUndefined(rightValue)) {
-                    if (tag < "010") {
-                        rightValue = "NA";
-                    } else {
-                        rightValue = [];
-                    }
-
-                }
+                leftValue = $this.props.left['record']['content'][tag] ||
+                                (tag < "010" ? "NA" : []);
+                rightValue = $this.props.right['record']['content'][tag] ||
+                                (tag < "010" ? "NA" : []);
 
                 if (tag < "010") {
                     // simple control field
@@ -231,31 +224,35 @@ body {
                         for (var j = 0; j < codes.length; j++) {
                             var code = codes[j];
 
-                            // get the subfield value ...
-                            var leftSubfieldValue = leftValue[i][code];
-                            var rightSubfieldValue = rightValue[i][code];
+                            if (tags[tag].length == 0 ||
+                                _.contains(tags[tag], code)) {
+                                // get the subfield value ...
+                                var leftSubfieldValue = leftValue[i][code];
+                                var rightSubfieldValue = rightValue[i][code];
 
-                            // .. normalize to an array
-                            // TODO: make arrays the default down the chain!
-                            if (!_.isArray(leftSubfieldValue)) {
-                                leftSubfieldValue = [leftSubfieldValue];
-                            }
-                            if (!_.isArray(rightSubfieldValue)) {
-                                rightSubfieldValue = [rightSubfieldValue];
-                            }
+                                // .. normalize to an array
+                                // TODO: make arrays the default down the chain!
+                                if (!_.isArray(leftSubfieldValue)) {
+                                    leftSubfieldValue = [leftSubfieldValue];
+                                }
+                                if (!_.isArray(rightSubfieldValue)) {
+                                    rightSubfieldValue = [rightSubfieldValue];
+                                }
 
-                            // typical subfield value count is 1, but repeated
-                            // subfield values have been spotted in 100.a, 936.k, ...
-                            maxSubfieldValueCount = Math.max(
-                                    leftSubfieldValue.length,
-                                    rightSubfieldValue.length);
+                                // typical subfield value count is 1,
+                                // but repeated subfield values have been
+                                // spotted in 100.a, 936.k, ...
+                                maxSubfieldValueCount = Math.max(
+                                        leftSubfieldValue.length,
+                                        rightSubfieldValue.length);
 
-                            for (var k = 0; k < maxSubfieldValueCount; k++) {
-                                rows.push(<FieldRow tag={tag}
-                                            omitTag={k > 0 || j > 0}
-                                            code={code}
-                                            leftValue={leftSubfieldValue[k]}
-                                            rightValue={rightSubfieldValue[k]} />);
+                                for (var k = 0; k < maxSubfieldValueCount; k++) {
+                                    rows.push(<FieldRow tag={tag}
+                                                omitTag={k > 0 || j > 0}
+                                                code={code}
+                                                leftValue={leftSubfieldValue[k]}
+                                                rightValue={rightSubfieldValue[k]} />);
+                                }
                             }
                         }
                     }
