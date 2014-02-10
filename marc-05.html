@@ -75,11 +75,94 @@ body {
     /** @jsx React.DOM */
 
 
-    var Row = React.createClass({
+    var Field = React.createClass({
         render: function() {
-            return (<tr><td>{this.props.tag}</td>
-                        <td>{this.props.leftValue}</td>
-                        <td>{this.props.rightValue}</td></tr>);
+            $this = this;
+            var leftValue = this.props.leftValue;
+            var rightValue = this.props.rightValue;
+            if (_.isUndefined(leftValue)) {
+                if (this.props.tag < "010") {
+                    leftValue = "NA";    
+                } else {
+                    leftValue = [];
+                }                
+            }
+            if (_.isUndefined(rightValue)) {
+                if (this.props.tag < "010") {
+                    rightValue = "NA";    
+                } else {
+                    rightValue = [];
+                }
+
+            }
+            if (this.props.tag < "010") {
+                // simple control field
+                return (<tr><td>{this.props.tag}</td>
+                            <td></td>
+                            <td>{leftValue}</td>
+                            <td>{rightValue}</td></tr>);
+            } else {
+                var table = {"left": [], "right": []};
+                var rows = [];
+
+                var max = Math.max(leftValue.length, rightValue.length);
+
+                for (var i = 0; i < max; i++) {
+                    if (leftValue[i] === undefined) {
+                        leftValue[i] = {};
+                    }
+                    if (rightValue[i] === undefined) {
+                        rightValue[i] = {};
+                    }
+                    leftCodes = Object.keys(leftValue[i]);
+                    rightCodes = Object.keys(rightValue[i]);
+
+                    var codes = _.union(leftCodes, rightCodes);
+                    codes = _.difference(codes, ["ind1", "ind2"]);
+                    for (var j = 0; j < codes.length; j++) {
+                        var code = codes[j];
+                        var leftSubfieldValue = leftValue[i][code];
+                        var rightSubfieldValue = rightValue[i][code];
+
+                        if (!_.isArray(leftSubfieldValue)) {
+                            leftSubfieldValue = [leftSubfieldValue];
+                        }
+                        if (!_.isArray(rightSubfieldValue)) {
+                            rightSubfieldValue = [rightSubfieldValue];
+                        }
+
+                        var leftSubfieldValueCount = 0;
+                        var rightSubfieldValueCount = 0;
+
+                        if (_.isArray(leftSubfieldValue)) {
+                            leftSubfieldValueCount = leftSubfieldValue.length;
+                        }
+                        if (_.isArray(rightSubfieldValue)) {
+                            rightSubfieldValueCount = rightSubfieldValue.length;
+                        }
+                        maxSubfieldValueCount = Math.max(leftSubfieldValueCount,
+                                                         rightSubfieldValueCount);
+
+                        console.log(this.props.tag, code, maxSubfieldValueCount);
+
+                        for (var k = 0; k < maxSubfieldValueCount; k++) {
+                            if (j == 0 && k == 0) {
+                                rows.push(<tr><td>{this.props.tag}</td>
+                                              <td>{code}</td>
+                                              <td>{leftSubfieldValue[k]}</td>
+                                              <td>{rightSubfieldValue[k]}</td></tr>);
+                            } else {
+                                rows.push(<tr><td></td>
+                                              <td>{code}</td>
+                                              <td>{leftSubfieldValue[k]}</td>
+                                              <td>{rightSubfieldValue[k]}</td></tr>);
+                            }
+                        }
+                    }
+                }
+                // TODO: make the span go away ...
+                return (<span>{rows}</span>);
+            }
         }
     });
 
@@ -88,7 +171,7 @@ body {
             return {defaultTags: {"001": [], "100": ["a"], "700": ["a"],
                                   "245": ["a", "b", "c"], "020": ["a", "9"],
                                   "655": ["a"], "935": ["a"], "300": ["a"],
-                                  "500": ["a"]}};
+                                  "500": ["a"], "936": []}};
         },
         getAllDefinedTags: function() {
             // TODO: return the union of the tags of left and right
@@ -96,13 +179,11 @@ body {
         render: function() {
             var rows = [];
             $this = this;
-            console.log(this.props.left);
             Object.keys(this.props.defaultTags).sort().forEach(function(tag, i) {
-                console.log(tag);
                 leftValue = $this.props.left['record']['content'][tag]
                 rightValue = $this.props.right['record']['content'][tag];
-                rows.push(<Row tag={tag} leftValue={leftValue}
-                               rightValue={rightValue} />);
+                rows.push(<Field tag={tag} leftValue={leftValue}
+                                 rightValue={rightValue} />);
             });
             return (<table>{rows}</table>);
         }

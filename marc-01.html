@@ -40,7 +40,7 @@ Example views: http://imgur.com/a/Qws1Z
             color: #222222;
             padding: 0;
             margin: 0;
-            font-family: "Helvetica Neue", "Helvetica", 
+            font-family: "Helvetica Neue", "Helvetica",
                         Helvetica, Arial, sans-serif;
             font-weight: normal;
             font-style: normal;
@@ -138,15 +138,15 @@ Example views: http://imgur.com/a/Qws1Z
             return {'shortenUrls': false,
                     'essentials': ["001", "100", "700", "245", "020",
                                    "655", "935", "300", "500"]};
-        },        
+        },
         render: function() {
             var record = this.props.record;
             var shortenUrls = this.props.shortenUrls;
             rows = [];
             if (this.state.showAll) {
-                filtered = record;    
+                filtered = record;
             } else {
-                filtered = _.pick(record, this.props.essentials);    
+                filtered = _.pick(record, this.props.essentials);
             }
             Object.keys(filtered).sort().forEach(function(tag) {
                 if (_.isString(record[tag])) {
@@ -169,14 +169,14 @@ Example views: http://imgur.com/a/Qws1Z
                                 // the typical case
                                 rows.push(<DataField tag={tag} code={code}
                                             value={field[code]} omitTag={j > 0}
-                                            shortenUrls={shortenUrls} />);      
+                                            shortenUrls={shortenUrls} />);
                             }
                         });
                     }
                 }
             });
             return (<table>{rows}</table>);
-        }       
+        }
     });
 
     var ElasticRecord = React.createClass({
@@ -187,7 +187,7 @@ Example views: http://imgur.com/a/Qws1Z
             return {'base': 'http://localhost:5000/doc',
                     'shortenUrls': false,
                     'essentials': ["001", "100", "700", "245", "020",
-                                   "655", "935", "300", "500"]};            
+                                   "655", "935", "300", "500"]};
         },
         componentWillMount: function() {
             var $this = this;
@@ -204,8 +204,8 @@ Example views: http://imgur.com/a/Qws1Z
             });
         },
         render: function() {
-            return (<div><Record record={this.state.record} 
-                        shortenUrls={this.props.shortenUrls} 
+            return (<div><Record record={this.state.record}
+                        shortenUrls={this.props.shortenUrls}
                         essentials={this.props.essentials} /></div>);
         }
     });
